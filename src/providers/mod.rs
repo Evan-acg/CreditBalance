@@ -24,6 +24,7 @@ pub struct BalanceReport {
 }
 
 pub trait Provider {
+    fn id(&self) -> &'static str;
     fn api_key_env_name(&self) -> &'static str;
     fn fetch_balance(&self, api_key: &str) -> Result<BalanceReport, anyhow::Error>;
 }

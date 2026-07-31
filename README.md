@@ -8,6 +8,8 @@
 - 查询 OpenRouter 账户余额：`crd or`
 - 默认简洁文本输出，`--format json` 输出机器可读 JSON
 - `-o <文件>` 将输出写入文件
+- 默认显示今日消耗（本地时区，基于本地缓存），`-t <单位>` 可变更时间单位
+- 每次查询余额自动写入本地缓存
 - `Provider` trait 架构，新增平台只需实现接口 + 注册子命令
 - API Key 从环境变量读取，不落盘
 
@@ -63,14 +65,27 @@ export DS_BALANCE_API_KEY="sk-..."
 ### 2. 查询余额
 
 ```bash
-crd ds                            # 文本输出（默认）
-crd ds --format json              # JSON 输出
+crd ds                            # 文本输出（默认，自动显示今日消耗）
+crd ds --format json              # JSON 输出（含 today_usage 字段）
 crd ds --format json -o bal.json  # 写入文件
+crd ds -t d                       # 明确指定今日消耗时间单位（默认即 d=天）
 crd or                            # 查询 OpenRouter 余额
-crd or --format json              # JSON 输出
 crd ds --help                     # 查看命令帮助
 crd --help                        # 查看全局帮助
 ```
+
+### 今日消耗（默认显示）
+
+查询结果默认显示今日（本地时区）消耗的费用，无需额外参数；`-t <单位>` 仅用于变更时间单位（当前支持 `d`=天）。
+
+每次查询的余额都会自动写入本地缓存：
+
+- Windows：`%APPDATA%\crd\cache.json`
+- Linux/macOS：`$XDG_CACHE_HOME/crd/cache.json` 或 `~/.cache/crd/cache.json`
+
+今日消耗 = 今天最早一次查询的余额 − 当前余额（当天首次查询显示 `0.00`）。缓存读写失败仅输出警告，不影响查询结果。
+
+JSON 输出格式：`{"balance": {...}, "today_usage": "X.XX"}`。
 
 ### 退出码
 

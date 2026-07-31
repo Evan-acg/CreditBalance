@@ -19,6 +19,10 @@ struct CreditsData {
 }
 
 impl Provider for OpenRouter {
+    fn id(&self) -> &'static str {
+        "or"
+    }
+
     fn api_key_env_name(&self) -> &'static str {
         API_KEY_ENV
     }
