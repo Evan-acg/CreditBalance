@@ -1,4 +1,7 @@
 /target
+build/*
+!build/*.sh
+!build/*.ps1
 *.rs.bk
 *.log
 

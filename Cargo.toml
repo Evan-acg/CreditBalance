@@ -3,4 +3,19 @@ name = "credit-balance"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "crd"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
 [dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", default-features = false, features = ["tls"] }
