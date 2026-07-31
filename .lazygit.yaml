@@ -1,0 +1,40 @@
+type:
+  - name: Feat
+    docs: 新特性
+  - name: Init
+    docs: 初始化
+  - name: Fix
+    docs: 缺陷修复
+  - name: Docs
+    docs: 文档变更
+  - name: Style
+    docs: 代码格式(不影响代码运行的变动)
+  - name: Refactor
+    docs: 重构(既不是新增核心点也不是修改bug的程序变动)
+  - name: Perf
+    docs: 性能优化
+  - name: Test
+    docs: 增加测试
+  - name: Chore
+    docs: 构建过程或辅助工具的变动
+  - name: Revert
+    docs: 回滚
+  - name: CI
+    docs: 持续集成相关
+  - name: WIP
+    docs: 未完成暂时保存
+scope:
+  - name: CLI
+    docs: 命令行参数与输出渲染
+  - name: Providers
+    docs: AI 平台余额查询实现
+  - name: Build
+    docs: 构建配置与体积优化
+  - name: Deploy
+    docs: 构建部署脚本
+  - name: Docs
+    docs: 文档变更
+  - name: Config
+    docs: 工具配置（lazygit 等）
+  - name: General
+    docs: 其它
