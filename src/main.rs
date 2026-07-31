@@ -6,6 +6,7 @@ use std::process::ExitCode;
 
 use anyhow::{anyhow, Context, Result};
 use providers::deepseek::DeepSeek;
+use providers::openrouter::OpenRouter;
 use providers::{BalanceReport, Provider};
 
 const USAGE: &str = "查询 AI 平台账户余额
@@ -14,6 +15,7 @@ const USAGE: &str = "查询 AI 平台账户余额
 
 命令:
   ds    查询 DeepSeek 余额
+  or    查询 OpenRouter 余额
   help  Print this message or the help of the given subcommand(s)
 
 选项:
@@ -21,6 +23,13 @@ const USAGE: &str = "查询 AI 平台账户余额
   -V, --version  Print version";
 
 const DS_USAGE: &str = "用法: crd ds [--format <text|json>] [-o <文件>]
+
+选项:
+      --format <text|json>  输出格式（默认: text）
+  -o, --output <文件>       将输出写入文件
+  -h, --help                Print help";
+
+const OR_USAGE: &str = "用法: crd or [--format <text|json>] [-o <文件>]
 
 选项:
       --format <text|json>  输出格式（默认: text）
@@ -35,6 +44,10 @@ enum Action {
 
 enum Command {
     Ds {
+        format: OutputFormat,
+        output: Option<String>,
+    },
+    Or {
         format: OutputFormat,
         output: Option<String>,
     },
@@ -78,20 +91,34 @@ fn parse_args(args: &[String]) -> Result<Action, String> {
         Some("-V" | "--version") => Ok(Action::Version),
         Some("help") => match args.get(1).map(String::as_str) {
             None | Some("ds") => Ok(Action::Help(USAGE.to_string())),
+            Some("or") => Ok(Action::Help(OR_USAGE.to_string())),
             Some(_) => Err("错误: 无法识别的命令".to_string()),
         },
-        Some("ds") => parse_ds(&args[1..]),
+        Some("ds") => parse_balance_args(
+            DS_USAGE,
+            &args[1..],
+            |format, output| Command::Ds { format, output },
+        ),
+        Some("or") => parse_balance_args(
+            OR_USAGE,
+            &args[1..],
+            |format, output| Command::Or { format, output },
+        ),
         Some(unknown) => Err(format!("错误: 无法识别的命令: {unknown}\n\n{USAGE}")),
     }
 }
 
-fn parse_ds(args: &[String]) -> Result<Action, String> {
+fn parse_balance_args(
+    usage: &str,
+    args: &[String],
+    cmd: impl FnOnce(OutputFormat, Option<String>) -> Command,
+) -> Result<Action, String> {
     let mut format = OutputFormat::Text;
     let mut output = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
-            "-h" | "--help" => return Ok(Action::Help(DS_USAGE.to_string())),
+            "-h" | "--help" => return Ok(Action::Help(usage.to_string())),
             "-o" | "--output" => {
                 i += 1;
                 output = Some(
@@ -110,11 +137,11 @@ fn parse_ds(args: &[String]) -> Result<Action, String> {
             arg if arg.starts_with("-o=") => {
                 output = Some(arg["-o=".len()..].to_string());
             }
-            arg => return Err(format!("错误: 未知选项: {arg}\n\n{DS_USAGE}")),
+            arg => return Err(format!("错误: 未知选项: {arg}\n\n{usage}")),
         }
         i += 1;
     }
-    Ok(Action::Run(Command::Ds { format, output }))
+    Ok(Action::Run(cmd(format, output)))
 }
 
 fn parse_format(s: &str) -> Result<OutputFormat, String> {
@@ -129,6 +156,7 @@ fn run(cmd: Command) -> Result<()> {
     let (provider, format, output): (Box<dyn Provider>, OutputFormat, Option<String>) =
         match cmd {
             Command::Ds { format, output } => (Box::new(DeepSeek), format, output),
+            Command::Or { format, output } => (Box::new(OpenRouter), format, output),
         };
 
     let api_key = std::env::var(provider.api_key_env_name()).map_err(|_| {

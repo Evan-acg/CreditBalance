@@ -5,6 +5,7 @@
 ## 功能特性
 
 - 查询 DeepSeek 账户余额：`crd ds`
+- 查询 OpenRouter 账户余额：`crd or`
 - 默认简洁文本输出，`--format json` 输出机器可读 JSON
 - `-o <文件>` 将输出写入文件
 - `Provider` trait 架构，新增平台只需实现接口 + 注册子命令
@@ -47,6 +48,7 @@ cargo build --release
 | 平台 | 环境变量 |
 |---|---|
 | DeepSeek | `DS_BALANCE_API_KEY` |
+| OpenRouter | `OR_BALANCE_API_KEY`（需 management key） |
 
 ```powershell
 # PowerShell
@@ -64,6 +66,8 @@ export DS_BALANCE_API_KEY="sk-..."
 crd ds                            # 文本输出（默认）
 crd ds --format json              # JSON 输出
 crd ds --format json -o bal.json  # 写入文件
+crd or                            # 查询 OpenRouter 余额
+crd or --format json              # JSON 输出
 crd ds --help                     # 查看命令帮助
 crd --help                        # 查看全局帮助
 ```

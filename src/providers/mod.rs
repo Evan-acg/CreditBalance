@@ -1,4 +1,5 @@
 pub mod deepseek;
+pub mod openrouter;
 
 use std::time::Duration;
 
