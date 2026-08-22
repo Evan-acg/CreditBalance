@@ -1,22 +1,24 @@
-# crd — AI 平台账户余额查询工具
+# crd — AI 平台余额与订阅额度查询工具
 
-命令行查询 AI 平台账户余额，支持多平台可扩展架构。
+命令行查询 AI 平台账户余额与 Codex 订阅额度。
 
 ## 功能特性
 
 - 查询 DeepSeek 账户余额：`crd ds`
 - 查询 OpenRouter 账户余额：`crd or`
+- 查询 ChatGPT 订阅下的 Codex 剩余额度与重置时间：`crd gpt`
 - 默认简洁文本输出，`--format json` 输出机器可读 JSON
 - `-o <文件>` 将输出写入文件
 - 默认显示今日消耗（本地时区，基于本地缓存），`-t <单位>` 可变更时间单位
 - 每次查询余额自动写入本地缓存
-- `Provider` trait 架构，新增平台只需实现接口 + 注册子命令
+- 余额平台使用 `Provider` trait 扩展，Codex 额度通过官方 app-server 查询
 - API Key 从环境变量读取，不落盘
 
 ## 环境要求
 
 - Rust 1.85+（项目使用 edition 2024）
 - 操作系统：Windows / Linux / macOS
+- 使用 `crd gpt` 时需安装 Codex CLI，并通过 ChatGPT 登录：`codex login`
 
 ## 构建
 
@@ -70,6 +72,9 @@ crd ds --format json              # JSON 输出（含 today_usage 字段）
 crd ds --format json -o bal.json  # 写入文件
 crd ds -t d                       # 明确指定今日消耗时间单位（默认即 d=天）
 crd or                            # 查询 OpenRouter 余额
+crd gpt                           # 查询 Codex 主/次额度窗口及重置时间
+crd gpt --format json             # Codex 额度的机器可读 JSON
+crd gpt -o codex-quota.txt        # 将 Codex 额度写入文件
 crd ds --help                     # 查看命令帮助
 crd --help                        # 查看全局帮助
 ```
@@ -86,6 +91,19 @@ crd --help                        # 查看全局帮助
 今日消耗 = 今天最早一次查询的余额 − 当前余额（当天首次查询显示 `0.00`）。缓存读写失败仅输出警告，不影响查询结果。
 
 JSON 输出格式：`{"balance": {...}, "today_usage": "X.XX"}`。
+
+### Codex 订阅额度
+
+`crd gpt` 复用 Codex CLI 的 ChatGPT 登录状态，不读取或输出访问令牌。查询前先完成登录：
+
+```bash
+codex login
+crd gpt
+```
+
+命令通过官方 `codex app-server` 的 `account/rateLimits/read` 方法查询主、次额度窗口。文本输出显示本地时间，JSON 中的 `resets_at` 使用 RFC 3339 UTC 时间。剩余额度按 `100 - used_percent` 计算。
+
+`gpt` 支持 `--format text|json` 和 `-o/--output`，不支持余额命令专用的 `--today`。如果提示方法不受支持，请升级 Codex CLI。
 
 ### 退出码
 
@@ -134,6 +152,6 @@ impl Provider for Xxx {
 ```
 
 2. 在 `src/providers/mod.rs` 中注册模块。
-3. 在 `src/main.rs` 中添加对应子命令并分发。
+3. 在 `src/cli.rs` 中添加子命令，并在 `src/application.rs` 中分发。
 
 环境变量命名规范：`<平台大写缩写>_BALANCE_API_KEY`（如 DeepSeek 为 `DS_BALANCE_API_KEY`）。
