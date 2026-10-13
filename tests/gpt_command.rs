@@ -61,19 +61,23 @@ fn rejects_today_for_gpt_command() {
     assert!(stderr.contains("用法: crd gpt"));
 }
 
-// Given Codex CLI 不可用、未登录或不支持额度查询
+// Given PATH 和 Desktop 安装目录中都没有 Codex app-server runtime
 // When 用户执行 crd gpt
-// Then 命令返回可操作的错误信息且不泄露认证凭据
+// Then 命令提示可安装的 runtime，且不泄露认证凭据
 #[test]
 fn reports_codex_app_server_failures_safely() {
     let output = Command::new(env!("CARGO_BIN_EXE_crd"))
         .arg("gpt")
         .env("PATH", "")
+        .env(
+            "LOCALAPPDATA",
+            std::env::temp_dir().join(format!("crd-no-desktop-{}", std::process::id())),
+        )
         .output()
         .expect("crd should start");
 
     let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
     assert!(!output.status.success());
-    assert!(stderr.contains("找不到 Codex CLI"));
+    assert!(stderr.contains("找不到 Codex app-server runtime"));
     assert!(!stderr.to_ascii_lowercase().contains("access_token"));
 }

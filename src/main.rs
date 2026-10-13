@@ -1,17 +1,24 @@
 mod application;
-mod cache;
-mod cli;
-mod codex_usage;
-mod output;
-mod providers;
+mod bootstrap;
+mod domain;
+mod infrastructure;
+mod interfaces;
 
 use std::process::ExitCode;
 
-use cli::Action;
+use interfaces::cli::Action;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    match cli::parse_args(&args) {
+    let application = match bootstrap::build_application() {
+        Ok(application) => application,
+        Err(error) => {
+            eprintln!("错误: {error:#}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let providers = application.balance_provider_descriptors();
+    match interfaces::cli::parse_args(&args, &providers) {
         Ok(Action::Help(usage)) => {
             println!("{usage}");
             ExitCode::SUCCESS
@@ -20,7 +27,7 @@ fn main() -> ExitCode {
             println!("crd {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
         }
-        Ok(Action::Run(command)) => match application::run(command) {
+        Ok(Action::Run(command)) => match interfaces::cli::execute(command, &application) {
             Ok(()) => ExitCode::SUCCESS,
             Err(error) => {
                 eprintln!("错误: {error:#}");

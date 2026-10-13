@@ -1,6 +1,8 @@
 use serde::Deserialize;
 
-use super::{BalanceInfo, BalanceReport, Provider};
+use super::{http::get_json, read_api_key};
+use crate::application::ports::BalanceProvider;
+use crate::domain::balance::{BalanceInfo, BalanceReport, OPENROUTER_PROVIDER_ID, ProviderId};
 
 pub struct OpenRouter;
 
@@ -18,18 +20,22 @@ struct CreditsData {
     total_usage: f64,
 }
 
-impl Provider for OpenRouter {
-    fn id(&self) -> &'static str {
-        "or"
+impl BalanceProvider for OpenRouter {
+    fn id(&self) -> ProviderId {
+        ProviderId::new(OPENROUTER_PROVIDER_ID)
     }
 
-    fn api_key_env_name(&self) -> &'static str {
-        API_KEY_ENV
+    fn display_name(&self) -> &'static str {
+        "OpenRouter"
     }
 
-    fn fetch_balance(&self, api_key: &str) -> Result<BalanceReport, anyhow::Error> {
-        let resp: CreditsResponse = super::get_json(CREDITS_URL, api_key)?;
-        Ok(map_to_report(resp.data.total_credits, resp.data.total_usage))
+    fn fetch_balance(&self) -> anyhow::Result<BalanceReport> {
+        let api_key = read_api_key(API_KEY_ENV)?;
+        let resp: CreditsResponse = get_json(CREDITS_URL, &api_key)?;
+        Ok(map_to_report(
+            resp.data.total_credits,
+            resp.data.total_usage,
+        ))
     }
 }
 
